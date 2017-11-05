@@ -101,6 +101,7 @@ OBJECTID	[a-z][a-zA-Z0-9_]*
 DIGIT		[0-9]
 CHAR		[A-Za-z]	
 NOT		?i:not
+WHITESPACE     [ \n\f\r\t\v]
 %%
 
  /*
@@ -279,7 +280,9 @@ NOT		?i:not
 {DIGIT}              	{
                         cool_yylval.symbol = inttable.add_string(yytext);
                         return INT_CONST;
-                    	}
+                    	}					
+<INITIAL>{WHITESPACE}	{}
+
 <INITIAL>.              { 
                            curr_lineno = yylineno;
                            cool_yylval.error_msg = yytext;
