@@ -42,10 +42,24 @@ extern YYSTYPE cool_yylval;
 /*
  *  Add Your own definitions here
  */
+#define RETURN_ERROR(msg) \
+    do { \
+        cool_yylval.error_msg = (msg); \
+        return ERROR; \
+    } while (0)
+
+#define EXTEND_STR(c) \
+    do { \
+        if (string_buf_ptr + 1 > &string_buf[MAX_STR_CONST - 1]) { \
+            BEGIN(INVALID_STRING); \
+            RETURN_ERROR("String constant too long"); \
+        } \
+        *string_buf_ptr++ = (c); \
+    } while (0)
 int cmnt = 0;
 %}
 
-%x COMMENT COMMENT_DASH STRING STRERROR
+%x COMMENT COMMENT_DASH STRING STRERROR INVALID_STRING
 
 /*
  * Define names for regular expressions here.
@@ -199,6 +213,59 @@ NOT		?i:not
   *  \n \t \b \f, the result is c.
   *
   */
+\"                  {
+                        string_buf_ptr = string_buf;
+                        BEGIN(STRING);
+                    }
+<STRING>{
+    \"              {
+                        *string_buf_ptr = '\0';
+                        BEGIN(INITIAL);
+                        cool_yylval.symbol = stringtable.add_string(string_buf);
+                        return STR_CONST;
+                    }
+    \\?\0           {
+                        BEGIN(INVALID_STRING);
+                        RETURN_ERROR("String contains null character");
+                    }
+    \n              {
+                        ++curr_lineno;
+                        BEGIN(INITIAL);
+                        RETURN_ERROR("Unterminated string constant");
+                    }
+    <<EOF>>         {
+                        BEGIN(INITIAL);     /* Prevent EOF loop */
+                        RETURN_ERROR("EOF in string constant");
+                    }
+    \\b             EXTEND_STR('\b');       /* backspace */
+    \\f             EXTEND_STR('\f');       /* formfeed */
+    \\t             EXTEND_STR('\t');       /* tab */
+    \\n             EXTEND_STR('\n');       /* newline */
+    \\\n            {                       /* escaped newline */
+                        ++curr_lineno;
+                        EXTEND_STR('\n');
+                    }
+    \\.             EXTEND_STR(yytext[1]);
+    [^\\\n\0\"]+    {
+                        if (string_buf_ptr + yyleng >
+                                &string_buf[MAX_STR_CONST - 1]) {
+                            BEGIN(INVALID_STRING);
+                            RETURN_ERROR("String constant too long");
+                        }
+                        strcpy(string_buf_ptr, yytext);
+                        string_buf_ptr += yyleng;
+                    }
+}
+<INVALID_STRING>{
+    \"          BEGIN(INITIAL);
+    \n          {
+                    ++curr_lineno;
+                    BEGIN(INITIAL);
+                }
+    \\\n        ++curr_lineno;
+    \\.         ;
+    [^\\\n\"]+  ;
+}
 
 
 %%
