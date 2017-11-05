@@ -201,10 +201,7 @@ NOT		?i:not
 {TRUE}			{ yylval.boolean = true; return BOOL_CONST; }
 {FALSE}			{ yylval.boolean = false; return BOOL_CONST; }
 
-{TYPEID}		{ yylval.symbol = idtable.add_string(yytext); return (TYPEID); }
-{OBJECTID}		{ yylval.symbol = idtable.add_string(yytext); return (OBJECTID); }
 
-[0-9]+              	{ cool_yylval.symbol = inttable.add_string(yytext); return INT_CONST; }
 
 
  /*
@@ -267,5 +264,26 @@ NOT		?i:not
     [^\\\n\"]+  ;
 }
 
+ /* 
+  *Identifiers and integers 
+  */
+
+{TYPEID}			{
+                        cool_yylval.symbol = idtable.add_string(yytext);
+                        return TYPEID;
+                    	}
+{OBJECTID}  		{
+                        cool_yylval.symbol = idtable.add_string(yytext);
+                        return OBJECTID;
+                    	}
+{DIGIT}              	{
+                        cool_yylval.symbol = inttable.add_string(yytext);
+                        return INT_CONST;
+                    	}
+<INITIAL>.              { 
+                           curr_lineno = yylineno;
+                           cool_yylval.error_msg = yytext;
+				           return ERROR;
+				        }	
 
 %%
