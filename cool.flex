@@ -66,12 +66,23 @@ ESAC  		?i:esac
 OF  		?i:of
 NEW  		?i:new
 ISVOID  	?i:isvoid
-BOOL_CONST	{TRUE|FALSE}  
+
+BOOL_CONST	{TRUE}|{FALSE}  
 NOT		?i:not  
 TRUE		(?-i:t)(?i:rue)
 FALSE		(?-i:f)(?i:alse)  
+
 DIGIT		[0-9]
 CHAR 		[A-Za-z]
+
+INTEGER        {DIGIT}+
+NEWLINE        "\n"
+
+CAPITAL        [A-Z]
+LOWER          [a-z]
+WHITESPACE     [ \n\f\r\t\v]
+
+
 
 %%
 
@@ -91,8 +102,28 @@ CHAR 		[A-Za-z]
   * Keywords are case-insensitive except for the values true and false,
   * which must begin with a lower-case letter.
   */
-
-ud
+{CLASS}			 {    return CLASS; }	
+{ELSE}        		 {    return ELSE;  }				
+{FI}    		 {    return FI;    }	
+{IF}           		 {    return IF;    }				
+{IN}		   	 {    return IN;    }	
+{INHERITS}		 {    return INHERITS;  }		
+{LET}			 {    return LET;   }
+{LOOP}			 {    return LOOP;  }	
+{POOL}      		 {    return POOL;  }	
+{THEN}        		 {    return THEN;  }					
+{WHILE}			 {    return WHILE; }	
+{CASE}			 {    return CASE;  }	
+{ESAC}			 {    return ESAC;  }	
+{NEW}			 {    return NEW;   }
+{ISVOID}		 {    return ISVOID;} 				
+{OF}			 {    return OF;    }	
+{NOT}          		 {    return NOT;   }
+{FALSE}	    		 {  cool_yylval.boolean = false;
+                            return BOOL_CONST;}   
+{TRUE}			{  cool_yylval.boolean = true;
+                           return BOOL_CONST;}
+			   	 
  /*
   *  String constants (C syntax)
   *  Escape sequence \c is accepted for all characters c. Except for 
