@@ -141,6 +141,25 @@ NOT		?i:not
   *  The multiple-character operators.
   */
 {DARROW}		{ return (DARROW); }
+"("         return '(';
+")"         return ')';
+"."         return '.';
+"@"         return '@';
+"~"         return '~';
+"*"         return '*';
+"/"         return '/';
+"+"         return '+';
+"-"         return '-';
+"<="        return LE;
+"<"         return '<';
+"="         return '=';
+"<-"        return ASSIGN;
+"{"         return '{';
+"}"         return '}';
+":"         return ':';
+","         return ',';
+";"         return ';';
+
 
  /*
   * Keywords are case-insensitive except for the values true and false,
@@ -172,6 +191,7 @@ NOT		?i:not
 {OBJECTID}		{ yylval.symbol = idtable.add_string(yytext); return (OBJECTID); }
 
 [0-9]+              	{ cool_yylval.symbol = inttable.add_string(yytext); return INT_CONST; }
+
 
  /*
   *  String constants (C syntax)
