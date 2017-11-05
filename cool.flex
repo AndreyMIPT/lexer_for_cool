@@ -42,48 +42,51 @@ extern YYSTYPE cool_yylval;
 /*
  *  Add Your own definitions here
  */
-
+int cmnt = 0;
 %}
+
+%x COMMENT COMMENT_DASH STRING STRERROR
 
 /*
  * Define names for regular expressions here.
  */
 
 DARROW          =>
-CLASS           ?i:class
-ELSE  		?i:else
-FI  		?i:fi
-IF  		?i:if
-IN  		?i:in
-INHERITS  	?i:inherits
-LET  		?i:let
-LOOP 		?i:loop
-POOL 		?i:pool
-THEN  		?i:then
-WHILE  		?i:while
-CASE  		?i:case
-ESAC  		?i:esac
-OF  		?i:of
-NEW  		?i:new
-ISVOID  	?i:isvoid
+/*
+ *From file cool-parser.h
+ */
 
-BOOL_CONST	{TRUE}|{FALSE}  
-NOT		?i:not  
-TRUE		(?-i:t)(?i:rue)
-FALSE		(?-i:f)(?i:alse)  
+CLASS		?i:class
+ELSE		?i:else
+FI		?i:fi
+IF		?i:if
+IN		?i:in
+INHERITS	?i:inherits
+LET		?i:let
+LOOP		?i:loop
+POOL		?i:pool
+THEN		?i:then
+WHILE		?i:while
+CASE		?i:case
+ESAC		?i:esac
+OF		?i:of
+NEW		?i:new
+ISVOID		?i:isvoid
+
+/*
+ *Bool expressions
+ */
+
+
+TRUE		t[Rr][Uu][Ee]
+FALSE		f[Aa][Ll][Ss][Ee]
+
+TYPEID		[A-Z][a-zA-Z0-9_]*
+OBJECTID	[a-z][a-zA-Z0-9_]*
 
 DIGIT		[0-9]
-CHAR 		[A-Za-z]
-
-INTEGER        {DIGIT}+
-NEWLINE        "\n"
-
-CAPITAL        [A-Z]
-LOWER          [a-z]
-WHITESPACE     [ \n\f\r\t\v]
-
-
-
+CHAR		[A-Za-z]	
+NOT		?i:not
 %%
 
  /*
@@ -91,39 +94,85 @@ WHITESPACE     [ \n\f\r\t\v]
   */
 
 
+
+<INITIAL>--             {BEGIN(COMMENT_DASH);}
+
+<COMMENT_DASH><<EOF>>   { curr_lineno = yylineno;
+                          yyterminate();
+                        }
+<COMMENT_DASH>[\n]      { curr_lineno = yylineno;
+                          BEGIN(INITIAL);
+                        }
+<COMMENT_DASH>[^\n]     {}
+
+
+<INITIAL>"(*"           { BEGIN(COMMENT);
+                          cmnt++;
+                        }
+
+<INITIAL>"*)"           {
+                          curr_lineno = yylineno;
+                          cool_yylval.error_msg = "Unmatched *)";
+                          return ERROR;
+                        }
+
+<COMMENT>"("+"*"        {  cmnt++;
+                        }
+
+<COMMENT>"*"+")"        {  cmnt--;
+                           if (cmnt==0)
+                           {
+                              BEGIN(INITIAL);
+                           }
+                        }
+
+<COMMENT>[^*(]|"("[^*]|"*"[^)] {}
+
+<COMMENT><<EOF>>        {
+                            curr_lineno = yylineno;
+                            cool_yylval.error_msg = "EOF in comment";
+                            BEGIN(INITIAL);
+                            return ERROR;
+                        }
+
+
+
  /*
   *  The multiple-character operators.
   */
 {DARROW}		{ return (DARROW); }
 
-
-
  /*
   * Keywords are case-insensitive except for the values true and false,
   * which must begin with a lower-case letter.
   */
-{CLASS}			 {    return CLASS; }	
-{ELSE}        		 {    return ELSE;  }				
-{FI}    		 {    return FI;    }	
-{IF}           		 {    return IF;    }				
-{IN}		   	 {    return IN;    }	
-{INHERITS}		 {    return INHERITS;  }		
-{LET}			 {    return LET;   }
-{LOOP}			 {    return LOOP;  }	
-{POOL}      		 {    return POOL;  }	
-{THEN}        		 {    return THEN;  }					
-{WHILE}			 {    return WHILE; }	
-{CASE}			 {    return CASE;  }	
-{ESAC}			 {    return ESAC;  }	
-{NEW}			 {    return NEW;   }
-{ISVOID}		 {    return ISVOID;} 				
-{OF}			 {    return OF;    }	
-{NOT}          		 {    return NOT;   }
-{FALSE}	    		 {  cool_yylval.boolean = false;
-                            return BOOL_CONST;}   
-{TRUE}			{  cool_yylval.boolean = true;
-                           return BOOL_CONST;}
-			   	 
+
+{CLASS}			{ return CLASS; }	
+{ELSE}         	 	{ return ELSE; }				
+{FI}    		{ return FI; }	
+{IF}          		{ return IF; }				
+{IN}		   	{ return IN; }	
+{INHERITS}		{ return INHERITS; }		
+{LET}			{ return LET; }
+{LOOP}			{ return LOOP; }	
+{POOL}      		{ return POOL; }	
+{THEN}        	   	{ return THEN; }					
+{WHILE}		  	{ return WHILE; }	
+{CASE}			{ return CASE; }	
+{ESAC}			{ return ESAC; }	
+{NEW}			{ return NEW; }
+{ISVOID}		{ return ISVOID; } 				
+{OF}			{ return OF; }	
+{NOT}          		{ return NOT; }
+
+{TRUE}			{ yylval.boolean = true; return BOOL_CONST; }
+{FALSE}			{ yylval.boolean = false; return BOOL_CONST; }
+
+{TYPEID}		{ yylval.symbol = idtable.add_string(yytext); return (TYPEID); }
+{OBJECTID}		{ yylval.symbol = idtable.add_string(yytext); return (OBJECTID); }
+
+[0-9]+              	{ cool_yylval.symbol = inttable.add_string(yytext); return INT_CONST; }
+
  /*
   *  String constants (C syntax)
   *  Escape sequence \c is accepted for all characters c. Except for 
