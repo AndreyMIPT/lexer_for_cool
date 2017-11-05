@@ -156,24 +156,24 @@ WHITESPACE     [ \n\f\r\t\v]
   *  The multiple-character operators.
   */
 {DARROW}		{ return (DARROW); }
-"("         return '(';
-")"         return ')';
-"."         return '.';
-"@"         return '@';
-"~"         return '~';
-"*"         return '*';
-"/"         return '/';
-"+"         return '+';
-"-"         return '-';
-"<="        return LE;
-"<"         return '<';
-"="         return '=';
-"<-"        return ASSIGN;
-"{"         return '{';
-"}"         return '}';
-":"         return ':';
-","         return ',';
-";"         return ';';
+"("         {return '(';}
+")"         {return ')';}
+"."         {return '.';}
+"@"         {return '@';}
+"~"         {return '~';}
+"*"         {return '*';}
+"/"         {return '/';}
+"+"         {return '+';}
+"-"         {return '-';}
+"<="        {return LE;}
+"<"         {return '<';}
+"="         {return '=';}
+"<-"        {return ASSIGN;}
+"{"         {return '{';}
+"}"         {return '}';}
+":"         {return ':';}
+","         {return ',';}
+";"         {return ';';}
 
 
  /*
@@ -268,16 +268,15 @@ WHITESPACE     [ \n\f\r\t\v]
  /* 
   *Identifiers and integers 
   */
-
-{TYPEID}			{
-                        cool_yylval.symbol = idtable.add_string(yytext);
-                        return TYPEID;
-                    	}
-{OBJECTID}  		{
-                        cool_yylval.symbol = idtable.add_string(yytext);
-                        return OBJECTID;
-                    	}
-{DIGIT}              	{
+<INITIAL>{TYPEID}       {  cool_yylval.symbol = stringtable.add_string(yytext); 
+                           curr_lineno = yylineno;                 
+                           return TYPEID;
+				        } 	
+<INITIAL>{OBJECTID}     {  cool_yylval.symbol = stringtable.add_string(yytext); 
+                           curr_lineno = yylineno;                 
+                           return OBJECTID;
+				        }
+{DIGIT}+              	{
                         cool_yylval.symbol = inttable.add_string(yytext);
                         return INT_CONST;
                     	}					
