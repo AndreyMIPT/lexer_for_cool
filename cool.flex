@@ -1,4 +1,4 @@
-/*
+ /*
  *  The scanner definition for COOL.
  */
 
@@ -101,7 +101,7 @@ OBJECTID	[a-z][a-zA-Z0-9_]*
 DIGIT		[0-9]
 CHAR		[A-Za-z]	
 NOT		?i:not
-WHITESPACE     [ \n\f\r\t\v]
+WHITESPACE     [ \f\r\t\v]
 %%
 
  /*
@@ -110,23 +110,25 @@ WHITESPACE     [ \n\f\r\t\v]
 
 
 
-<INITIAL>--             {BEGIN(COMMENT_DASH);}
+<INITIAL>--             {
+			BEGIN(COMMENT_DASH);
+			}
 
-<COMMENT_DASH><<EOF>>   { curr_lineno = yylineno;
+<COMMENT_DASH><<EOF>>   {	
                           yyterminate();
                         }
-<COMMENT_DASH>[\n]      { curr_lineno = yylineno;
+<COMMENT_DASH>[\n]      { ++curr_lineno;
                           BEGIN(INITIAL);
                         }
 <COMMENT_DASH>[^\n]     {}
 
 
-<INITIAL>"(*"           { BEGIN(COMMENT);
+<INITIAL>"(*"           { 
+			BEGIN(COMMENT);
                           cmnt++;
                         }
 
-<INITIAL>"*)"           {
-                          curr_lineno = yylineno;
+<INITIAL>"*)"           { 
                           cool_yylval.error_msg = "Unmatched *)";
                           return ERROR;
                         }
@@ -140,11 +142,12 @@ WHITESPACE     [ \n\f\r\t\v]
                               BEGIN(INITIAL);
                            }
                         }
+<COMMENT>[\n]      	{ ++curr_lineno;}
+<COMMENT>[\\\n]		{ ++curr_lineno;}
 
 <COMMENT>[^*(]|"("[^*]|"*"[^)] {}
 
-<COMMENT><<EOF>>        {
-                            curr_lineno = yylineno;
+<COMMENT><<EOF>>        {   
                             cool_yylval.error_msg = "EOF in comment";
                             BEGIN(INITIAL);
                             return ERROR;
@@ -260,7 +263,7 @@ WHITESPACE     [ \n\f\r\t\v]
                     ++curr_lineno;
                     BEGIN(INITIAL);
                 }
-    \\\n        ++curr_lineno;
+    \\\n        {++curr_lineno;}
     \\.         ;
     [^\\\n\"]+  ;
 }
@@ -268,22 +271,20 @@ WHITESPACE     [ \n\f\r\t\v]
  /* 
   *Identifiers and integers 
   */
-<INITIAL>{TYPEID}       {  cool_yylval.symbol = stringtable.add_string(yytext); 
-                           curr_lineno = yylineno;                 
+<INITIAL>{TYPEID}       {  cool_yylval.symbol = stringtable.add_string(yytext);                  
                            return TYPEID;
 				        } 	
-<INITIAL>{OBJECTID}     {  cool_yylval.symbol = stringtable.add_string(yytext); 
-                           curr_lineno = yylineno;                 
+<INITIAL>{OBJECTID}     {  cool_yylval.symbol = stringtable.add_string(yytext);                 
                            return OBJECTID;
 				        }
 {DIGIT}+              	{
                         cool_yylval.symbol = inttable.add_string(yytext);
                         return INT_CONST;
-                    	}					
+                    	}
+<INITIAL>\n			{++curr_lineno;}					
 <INITIAL>{WHITESPACE}	{}
 
 <INITIAL>.              { 
-                           curr_lineno = yylineno;
                            cool_yylval.error_msg = yytext;
 				           return ERROR;
 				        }	
