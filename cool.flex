@@ -147,11 +147,9 @@ WHITESPACE     [ \f\r\t\v]
 
 <COMMENT>[^*(]|"("[^*]|"*"[^)] {}
 
-<COMMENT><<EOF>>        {   
-                            cool_yylval.error_msg = "EOF in comment";
-                            BEGIN(INITIAL);
-                            return ERROR;
-                        }
+<COMMENT><<EOF>>        {   BEGIN(INITIAL);
+                            RETURN_ERROR("EOF in comment");                        
+			    }
 
 
 
@@ -281,12 +279,10 @@ WHITESPACE     [ \f\r\t\v]
                         cool_yylval.symbol = inttable.add_string(yytext);
                         return INT_CONST;
                     	}
-<INITIAL>\n			{++curr_lineno;}					
+<INITIAL>"*)"           {RETURN_ERROR("Unmatched *)");}
+<INITIAL>\n		{++curr_lineno;}					
 <INITIAL>{WHITESPACE}	{}
 
-<INITIAL>.              { 
-                           cool_yylval.error_msg = yytext;
-				           return ERROR;
-				        }	
+<INITIAL>.          	{RETURN_ERROR(yytext);}	
 
 %%
